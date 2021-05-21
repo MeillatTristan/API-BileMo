@@ -1,0 +1,26 @@
+nelmio_api_doc:
+    models: { use_jms: false }
+    documentation:
+        info:
+            title: Bilemo
+            description: Manage your users & products using our API
+            version: 1.0.0
+        tags:
+          - name: "User"
+            description: "Users Request"
+          - name: "Product"
+            description: "Products Request"
+          - name: "Client"
+            description: "Client Registration"
+        components:
+            securitySchemes:
+                Bearer:
+                    type: http
+                    scheme: bearer
+
+
+    areas: # to filter documented areas
+      path_patterns: # an array of regexps
+          - ^/api(?!/doc$)
+      host_patterns:
+          - ^api\.
