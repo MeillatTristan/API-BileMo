@@ -6,6 +6,7 @@ use App\Entity\User;
 use App\Repository\ClientRepository;
 use App\Repository\UserRepository;
 use App\Service\HateoasService;
+use App\Service\PaginatorService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -107,7 +108,7 @@ class SecurityController extends AbstractController
   /**
    * List all users
    * 
-   * @Route("/api/users/showAll", name="usersShow", methods="GET")
+   * @Route("/api/users/showAll/{page}", name="usersShow", methods="GET")
    * 
    * @OA\Response(
    *     response=200,
@@ -117,19 +118,27 @@ class SecurityController extends AbstractController
    *        @OA\Items(ref=@Model(type=User::class, groups={"UserShow"}))
    *     )
    * )
+   * 
+   * @OA\Parameter(
+     *     name="page",
+     *     in="path",
+     *     description="page number",
+     *     @OA\Schema(type="integer")
+     * )
    * @OA\Tag(name="Users")
    * @Security(name="Bearer")
    */
-  public function showAll()
+  public function showAll(UserRepository $productRepository, String $page, PaginatorService $paginator)
   {
-    $users = $this->getDoctrine()->getRepository(User::class)->findAll();
+    $query = $productRepository->findPageByProduct();
 
-    $data = $this->hateoasService->serializeHypermedia($users, 'UserShow');
+    $usersPaginate = $paginator->paginate($query, '10', $page);
+
+    $data = $this->hateoasService->serializeHypermedia($usersPaginate, 'UserShow');
 
     $response = new JsonResponse($data, 200, ['Content-Type' => 'application/json'], true);
     return $response;
 
-    return $response;
   }
 
   /**
@@ -178,7 +187,7 @@ class SecurityController extends AbstractController
   /**
    * List all clients link with the user connected
    * 
-   * @Route("/api/users/showClients", name="userShowClients", methods="GET")
+   * @Route("/api/users/showClients/{page}", name="userShowClients", methods="GET")
    * 
    * @OA\Response(
    *     response=200,
@@ -191,11 +200,14 @@ class SecurityController extends AbstractController
    * @OA\Tag(name="Users")
    * @Security(name="Bearer")
    */
-  public function showClients(ClientRepository $ClientRepo)
+  public function showClients(ClientRepository $ClientRepo, String $page, PaginatorService $paginator)
   {
     $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
-    $clients = $ClientRepo->findByUser($this->getUser());
-    $data = $this->hateoasService->serializeHypermedia($clients, 'UserShow');
+
+    $query = $ClientRepo->findByUser($this->getUser());
+
+    $clientsPaginate = $paginator->paginate($query, '10', $page);
+    $data = $this->hateoasService->serializeHypermedia($clientsPaginate, 'UserShow');
 
     $response = new JsonResponse($data, 200, ['Content-Type' => 'application/json'], true);
 

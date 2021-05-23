@@ -3,7 +3,9 @@
 namespace App\Controller;
 
 use App\Entity\Client;
+use App\Repository\ClientRepository;
 use App\Service\HateoasService;
+use App\Service\PaginatorService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -101,7 +103,7 @@ class ClientController extends AbstractController
     /**
      * List all Clients
      * 
-     * @Route("/api/clients/showAll", name="clientsShow", methods="GET")
+     * @Route("/api/clients/showAll/{page}", name="clientsShow", methods="GET")
      * 
      * @OA\Response(
      *     response=200,
@@ -111,14 +113,24 @@ class ClientController extends AbstractController
      *        @OA\Items(ref=@Model(type=Client::class, groups={"ClientShow"}))
      *     )
      * )
+     * 
+     * @OA\Parameter(
+     *     name="page",
+     *     in="path",
+     *     description="page number",
+     *     @OA\Schema(type="integer")
+     * )
+     * 
      * @OA\Tag(name="Clients")
      * @Security(name="Bearer")
      */
-    public function showAll()
+    public function showAll(ClientRepository $productRepository, String $page, PaginatorService $paginator)
     {
-        $clients = $this->getDoctrine()->getRepository(Client::class)->findAll();
+        $query = $productRepository->findPageByProduct();
 
-        $data = $this->hateoasService->serializeHypermedia($clients, 'ClientShow');
+        $clientsPaginate = $paginator->paginate($query, '10', $page);
+
+        $data = $this->hateoasService->serializeHypermedia($clientsPaginate, 'ClientShow');
 
         $response = new JsonResponse($data, 200, ['Content-Type' => 'application/json'], true);
         return $response;

@@ -44,4 +44,11 @@ class ClientRepository extends ServiceEntityRepository
         ;
     }
     */
+
+    public function findPageByClient()
+    {
+        return $this->createQueryBuilder('u')
+            ->orderBy('u.id', 'ASC')
+            ->getQuery();
+    }
 }

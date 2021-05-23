@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Product;
 use App\Repository\ProductRepository;
 use App\Service\HateoasService;
+use App\Service\PaginatorService;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use GuzzleHttp\Psr7\Response;
@@ -53,26 +54,22 @@ class ProductController extends AbstractController
      *        @OA\Items(ref=@Model(type=Product::class, groups={"default"}))
      *     )
      * )
+     * 
+     * @OA\Parameter(
+     *     name="page",
+     *     in="path",
+     *     description="page number",
+     *     @OA\Schema(type="integer")
+     * )
      * @OA\Tag(name="products")
      * @Security(name="Bearer")
      */
-    public function showAll(ProductRepository $productRepository, String $page)
+    public function showAll(ProductRepository $productRepository, String $page, PaginatorService $paginator)
     {
         $query = $productRepository->findPageByProduct();
-        $paginator = new Paginator($query);
 
-        $productsPaginate = $paginator
-            ->getQuery()
-            ->setFirstResult(10 * ($page - 1)) // set the offset
-            ->setMaxResults(10) // set the limit
-            ->getResult();
+        $productsPaginate = $paginator->paginate($query, '10', $page);
 
-        $lastPage = ceil($paginator->count() / $paginator->getQuery()->getMaxResults());
-        if ($page <= $lastPage($paginator)) {
-
-            return $productsPaginate;
-
-        }
         $data = $this->hateoasService->serializeHypermedia($productsPaginate, 'default');
 
         $response = new JsonResponse($data, 200, ['Content-Type' => 'application/json'], true);
