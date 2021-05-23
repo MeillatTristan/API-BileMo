@@ -16,6 +16,9 @@ use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Nelmio\ApiDocBundle\Annotation\Model as Model;
+use Nelmio\ApiDocBundle\Annotation\Security;
+use OpenApi\Annotations as OA;
 
 class SecurityController extends AbstractController
 {
@@ -35,9 +38,46 @@ class SecurityController extends AbstractController
     }
 
   /**
-   * @Route("/api/register")
-   * @Method({"POST"})
+   * Add a new user
    * 
+   * @Route("/api/register", name="userRegister", methods="POST")
+   * 
+   * @OA\Response(
+     *     response=201,
+     *     description="Return client added",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=User::class, groups={"UserShow"}))
+     *     )
+     * )
+     * 
+     * @OA\Response(
+     *     response=400,
+     *     description="data doesn't valid",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=User::class, groups={"UserShow"}))
+     *     )
+     * )
+     * 
+     * @OA\Parameter(
+     *     name="username",
+     *     in="query",
+     *     description="username of client",
+     *     required=true,
+     *     @OA\Schema(type="string")
+     * )
+     * 
+     * @OA\Parameter(
+     *     name="email",
+     *     in="query",
+     *     description="email of client",
+     *     required=true,
+     *     @OA\Schema(type="string")
+     * )
+     * 
+     * @OA\Tag(name="Users")
+     * @Security(name="Bearer")
    */
   public function register(Request $request, UserPasswordEncoderInterface $encoder, EntityManagerInterface $manager, ValidatorInterface $validator, SerializerInterface $serializer)
   {
@@ -65,8 +105,20 @@ class SecurityController extends AbstractController
   }
 
   /**
-   * @Route("/api/users/showAll", name="usersShow")
-   * @Method({"GET"})
+   * List all users
+   * 
+   * @Route("/api/users/showAll", name="usersShow", methods="GET")
+   * 
+   * @OA\Response(
+   *     response=200,
+   *     description="List all users",
+   *     @OA\JsonContent(
+   *        type="array",
+   *        @OA\Items(ref=@Model(type=User::class, groups={"UserShow"}))
+   *     )
+   * )
+   * @OA\Tag(name="Users")
+   * @Security(name="Bearer")
    */
   public function showAll()
   {
@@ -81,8 +133,33 @@ class SecurityController extends AbstractController
   }
 
   /**
-   * @Route("/api/users/{id}/show", name="userShow")
-   * @Method({"GET"})
+   * Return user detail with ID params
+   * 
+   * @Route("/api/users/{id}/show", name="userShow", methods="GET")
+   * 
+   * @OA\Response(
+   *     response=200,
+   *     description="Return the user requested",
+   *     @OA\JsonContent(
+   *        type="array",
+   *        @OA\Items(ref=@Model(type=User::class, groups={"UserShow"}))
+   *     )
+   * )
+   * 
+   * @OA\Response(
+   *     response=404,
+   *     description="User not found",
+   *     @OA\JsonContent(example = "User not found")
+   * )
+   * 
+   * @OA\Parameter(
+   *     name="id",
+   *     in="path",
+   *     description="resource ID",
+   *     @OA\Schema(type="integer")
+   * )
+   * @OA\Tag(name="Users")
+   * @Security(name="Bearer")
    */
   public function showDetail(string $id)
   {
@@ -99,8 +176,20 @@ class SecurityController extends AbstractController
   }
 
   /**
-   * @Route("/api/users/showClients", name="userShowClients")
-   * @Method({"GET"})
+   * List all clients link with the user connected
+   * 
+   * @Route("/api/users/showClients", name="userShowClients", methods="GET")
+   * 
+   * @OA\Response(
+   *     response=200,
+   *     description="List all client link with the user connected",
+   *     @OA\JsonContent(
+   *        type="array",
+   *        @OA\Items(ref=@Model(type=Client::class, groups={"UserShow"}))
+   *     )
+   * )
+   * @OA\Tag(name="Users")
+   * @Security(name="Bearer")
    */
   public function showClients(ClientRepository $ClientRepo)
   {
@@ -114,8 +203,33 @@ class SecurityController extends AbstractController
   }
 
   /**
-   * @Route("/api/users/{id}/put", name="user_update")
-   * @Method({"PUT"})
+   * update a user
+   * 
+   * @Route("/api/users/{id}/put", name="user_update", methods="PUT")
+   * 
+   * @OA\Response(
+   *     response=200,
+   *     description="Return the user requested",
+   *     @OA\JsonContent(
+   *        type="array",
+   *        @OA\Items(ref=@Model(type=User::class, groups={"UserShow"}))
+   *     )
+   * )
+   * 
+   * @OA\Response(
+   *     response=404,
+   *     description="User not found",
+   *     @OA\JsonContent(example = "User not found")
+   * )
+   * 
+   * @OA\Parameter(
+   *     name="id",
+   *     in="path",
+   *     description="resource ID",
+   *     @OA\Schema(type="integer")
+   * )
+   * @OA\Tag(name="Users")
+   * @Security(name="Bearer")
    */
   public function update(String $id, Request $request, EntityManagerInterface $manager, UserPasswordEncoderInterface $encoder, ValidatorInterface $validator)
   {
@@ -152,8 +266,31 @@ class SecurityController extends AbstractController
   }
 
   /**
-   * @Route("/api/users/{id}/delete", name="user_delete")
-   * @Method({"DELETE"})
+   * Delete a user
+   * 
+   * @Route("/api/users/{id}/delete", name="user_delete", methods="DELETE")
+   * 
+   * @OA\Response(
+     *     response=400,
+     *     description="User not found",
+     *     @OA\JsonContent(example = "User not found")
+     * )
+     * 
+     * @OA\Response(
+     *     response=204,
+     *     description="user has been deleting",
+     *     @OA\JsonContent(example = "user has been deleting")
+     * )
+     * 
+     * @OA\Parameter(
+     *     name="id",
+     *     in="path",
+     *     description="resource ID",
+     *     @OA\Schema(type="integer")
+     * )
+     * 
+     * @OA\Tag(name="Users")
+     * @Security(name="Bearer")
    */
   public function delete(String $id, EntityManagerInterface $manager)
   {

@@ -6,6 +6,7 @@ use App\Entity\Product;
 use App\Repository\ProductRepository;
 use App\Service\HateoasService;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use GuzzleHttp\Psr7\Response;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
@@ -14,20 +15,15 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Exception\NotEncodableValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Nelmio\ApiDocBundle\Annotation\Model;
+use Nelmio\ApiDocBundle\Annotation\Model as Model;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
-use Nelmio\ApiDocBundle\Annotation as Doc;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use UsingInterfaces\ProductInterface;
 
 /**
  * Class ApiProductController
  *
  * @package App/Controller
- * 
- * @Security(name="Bearer")
- * @OA\Tag(name="Product")
  */
 class ProductController extends AbstractController
 {
@@ -47,21 +43,71 @@ class ProductController extends AbstractController
     }
 
     /**
-     * @Route("/api/products/showAll", name="productsShow")
-     * @Method({"GET"})
+     * List all the product
+     * @Route("/api/products/showAll/{page}", name="productsShow", methods={"GET"})
+     * @OA\Response(
+     *     response=200,
+     *     description="List all the product",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Product::class, groups={"default"}))
+     *     )
+     * )
+     * @OA\Tag(name="products")
+     * @Security(name="Bearer")
      */
-    public function showAll(ProductRepository $productRepository)
+    public function showAll(ProductRepository $productRepository, String $page)
     {
-        $products = $productRepository->findAll();
-        $data = $this->hateoasService->serializeHypermedia($products, 'default');
+        $query = $productRepository->findPageByProduct();
+        $paginator = new Paginator($query);
+
+        $productsPaginate = $paginator
+            ->getQuery()
+            ->setFirstResult(10 * ($page - 1)) // set the offset
+            ->setMaxResults(10) // set the limit
+            ->getResult();
+
+        $lastPage = ceil($paginator->count() / $paginator->getQuery()->getMaxResults());
+        if ($page <= $lastPage($paginator)) {
+
+            return $productsPaginate;
+
+        }
+        $data = $this->hateoasService->serializeHypermedia($productsPaginate, 'default');
 
         $response = new JsonResponse($data, 200, ['Content-Type' => 'application/json'], true);
         return $response;
     }
 
     /**
-     * @Route("/api/products/{id}/show", name="productShow")
+     * Return one product with the id
+     * 
+     * @Route("/api/products/{id}/show", name="productShow", methods={"GET"})
      * @Method({"GET"})
+     * 
+     * @OA\Response(
+     *     response=200,
+     *     description="Returns on product",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Product::class, groups={"default"}))
+     *     )
+     * )
+     * 
+     * @OA\Response(
+     *     response=404,
+     *     description="Product not found",
+     *     @OA\JsonContent(example="Product not found")
+     * )
+     * 
+     * @OA\Parameter(
+     *     name="id",
+     *     in="path",
+     *     description="resource ID",
+     *     @OA\Schema(type="integer")
+     * )
+     * @OA\Tag(name="products")
+     * @Security(name="Bearer")
      */
     public function showDetail(string $id){
         if(empty($product = $this->getDoctrine()->getRepository(Product::class)->find($id))){
@@ -76,8 +122,49 @@ class ProductController extends AbstractController
     }
 
     /**
-     * @Route("/api/products/post", name="product_create")
-     * @Method({"POST"})
+     * Create an product
+     * @Route("/api/products/post", name="product_create", methods={"POST"})
+     * 
+     * @OA\Response(
+     *     response=201,
+     *     description="Returns client added",
+     *     @Model(type=Product::class)
+     * )
+     * @OA\Response(
+     *     response=400,
+     *     description="data doesn't valid",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Product::class, groups={"default"}))
+     *     )
+     * )
+     * 
+     * @OA\Parameter(
+     *     name="model",
+     *     in="query",
+     *     description="model of product",
+     *     required=true,
+     *     @OA\Schema(type="string")
+     * )
+     * 
+     * @OA\Parameter(
+     *     name="brand",
+     *     in="query",
+     *     description="brand of product",
+     *     required=true,
+     *     @OA\Schema(type="string")
+     * )
+     * 
+     * @OA\Parameter(
+     *     name="price",
+     *     in="query",
+     *     description="price of product",
+     *     required=true,
+     *     @OA\Schema(type="string")
+     * )
+     * 
+     * @OA\Tag(name="products")
+     * @Security(name="Bearer")
      */
     public function post(Request $request, SerializerInterface $serializer, EntityManagerInterface $manager, ValidatorInterface $validator){
         $jsonRecu = $request->getContent();
@@ -103,8 +190,49 @@ class ProductController extends AbstractController
     }
 
     /**
-     * @Route("/api/products/{id}/put", name="product_update")
-     * @Method({"PUT"})
+     * Update the product
+     * @Route("/api/products/{id}/put", name="product_update", methods={"PUT"})
+     * 
+     * @OA\Response(
+     *     response=404,
+     *     description="not product found",
+     *     @OA\JsonContent(example="Product not found")
+     * )
+     * @OA\Response(
+     *     response=200,
+     *     description="product has been update",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Product::class, groups={"default"}))
+     *     )
+     * )
+     * 
+     * @OA\Parameter(
+     *     name="model",
+     *     in="query",
+     *     description="model of product",
+     *     required=true,
+     *     @OA\Schema(type="string")
+     * )
+     * 
+     * @OA\Parameter(
+     *     name="brand",
+     *     in="query",
+     *     description="brand of product",
+     *     required=true,
+     *     @OA\Schema(type="string")
+     * )
+     * 
+     * @OA\Parameter(
+     *     name="price",
+     *     in="query",
+     *     description="price of product",
+     *     required=true,
+     *     @OA\Schema(type="string")
+     * )
+     * 
+     * @OA\Tag(name="products")
+     * @Security(name="Bearer")
      */
     public function update(String $id, Request $request, EntityManagerInterface $manager){
         $product = $this->getDoctrine()->getRepository(Product::class)->find($id);
@@ -135,8 +263,29 @@ class ProductController extends AbstractController
     }
 
     /**
-     * @Route("/api/products/{id}/delete", name="product_delete")
-     * @Method({"DELETE"})
+     * Delete the product with id params
+     * @Route("/api/products/{id}/delete", name="product_delete", methods={"DELETE"})
+     * 
+     * @OA\Response(
+     *     response=204,
+     *     description="Delete the product",
+     *     @OA\JsonContent(example="Product has been deleting")
+     * )
+     * 
+     * @OA\Response(
+     *     response=400,
+     *     description="Product not found",
+     *     @OA\JsonContent(example="Product not found")
+     * )
+     * 
+     * @OA\Parameter(
+     *     name="id",
+     *     in="path",
+     *     description="resource ID",
+     *     @OA\Schema(type="integer")
+     * )
+     * @OA\Tag(name="products")
+     * @Security(name="Bearer")
      */
     public function delete(String $id, EntityManagerInterface $manager){
         $product = $this->getDoctrine()->getRepository(Product::class)->find($id);

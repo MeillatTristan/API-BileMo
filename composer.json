@@ -14,6 +14,7 @@
         "doctrine/orm": "^2.8",
         "friendsofsymfony/rest-bundle": "^3.0",
         "jms/serializer-bundle": "^3.9",
+        "knplabs/knp-paginator-bundle": "^5.4",
         "league/oauth2-google": "^4.0",
         "lexik/jwt-authentication-bundle": "^2.11",
         "nelmio/api-doc-bundle": "^4.2",

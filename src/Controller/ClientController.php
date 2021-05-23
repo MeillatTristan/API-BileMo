@@ -7,13 +7,15 @@ use App\Service\HateoasService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\Exception\NotEncodableValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Nelmio\ApiDocBundle\Annotation\Model as Model;
+use Nelmio\ApiDocBundle\Annotation\Security;
+use OpenApi\Annotations as OA;
 
 class ClientController extends AbstractController
 {
@@ -32,8 +34,45 @@ class ClientController extends AbstractController
         $this->hateoasService = $hateoasService;
     }
     /**
-     * @Route("/api/clients/post", name="clientAdd")
-     * @Method({"POST"})
+     * Create a client
+     * @Route("/api/clients/post", name="clientAdd", methods="POST")
+     * 
+     * @OA\Response(
+     *     response=201,
+     *     description="Return client added",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Client::class, groups={"ClientShow"}))
+     *     )
+     * )
+     * 
+     * @OA\Response(
+     *     response=400,
+     *     description="data doesn't valid",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Client::class, groups={"ClientShow"}))
+     *     )
+     * )
+     * 
+     * @OA\Parameter(
+     *     name="email",
+     *     in="query",
+     *     description="email of client",
+     *     required=true,
+     *     @OA\Schema(type="string")
+     * )
+     * 
+     * @OA\Parameter(
+     *     name="name",
+     *     in="query",
+     *     description="name of client",
+     *     required=true,
+     *     @OA\Schema(type="string")
+     * )
+     * 
+     * @OA\Tag(name="Clients")
+     * @Security(name="Bearer")
      */
     public function post(Request $request, SerializerInterface $serializer, EntityManagerInterface $manager, ValidatorInterface $validator){
         $jsonRecu = $request->getContent();
@@ -60,8 +99,20 @@ class ClientController extends AbstractController
     }
 
     /**
-     * @Route("/api/clients/showAll", name="clientsShow")
-     * @Method({"GET"})
+     * List all Clients
+     * 
+     * @Route("/api/clients/showAll", name="clientsShow", methods="GET")
+     * 
+     * @OA\Response(
+     *     response=200,
+     *     description="List all clients",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Client::class, groups={"ClientShow"}))
+     *     )
+     * )
+     * @OA\Tag(name="Clients")
+     * @Security(name="Bearer")
      */
     public function showAll()
     {
@@ -74,8 +125,32 @@ class ClientController extends AbstractController
     }
 
     /**
-     * @Route("/api/clients/{id}/show", name="clientShow")
-     * @Method({"GET"})
+     * Return data of a client with a ID params
+     * @Route("/api/clients/{id}/show", name="clientShow", methods="GET")
+     * 
+     * @OA\Response(
+     *     response=200,
+     *     description="Return the client requested",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Client::class, groups={"ClientShow"}))
+     *     )
+     * )
+     * 
+     * @OA\Response(
+     *     response=404,
+     *     description="Client not found",
+     *     @OA\JsonContent(example = "Client not found")
+     * )
+     * 
+     * @OA\Parameter(
+     *     name="id",
+     *     in="path",
+     *     description="resource ID",
+     *     @OA\Schema(type="integer")
+     * )
+     * @OA\Tag(name="Clients")
+     * @Security(name="Bearer")
      */
     public function showDetail(string $id){
         if(empty($client = $this->getDoctrine()->getRepository(Client::class)->find($id))){
@@ -91,8 +166,54 @@ class ClientController extends AbstractController
     }
 
     /**
-     * @Route("/api/clients/{id}/put", name="client_update")
-     * @Method({"PUT"})
+     * Update a client with ID in params
+     * 
+     * @Route("/api/clients/{id}/put", name="client_update", methods="PUT")
+     * 
+     * @OA\Response(
+     *     response=200,
+     *     description="Client has been updated",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Client::class, groups={"ClientShow"}))
+     *     )
+     * )
+     * 
+     * @OA\Response(
+     *     response=404,
+     *     description="Client not found",
+     *     @OA\JsonContent(example = "Client not found")
+     * )
+     * 
+     * @OA\Response(
+     *     response=400,
+     *     description="Data doesn't valid",
+     *     @OA\JsonContent(example = "Data doesn't valid")
+     * )
+     * 
+     * @OA\Parameter(
+     *     name="id",
+     *     in="path",
+     *     description="resource ID",
+     *     @OA\Schema(type="integer")
+     * )
+     * 
+     * @OA\Parameter(
+     *     name="name",
+     *     in="query",
+     *     description="name of Client",
+     *     @OA\Schema(type="string")
+     * )
+     * 
+     * @OA\Parameter(
+     *     name="email",
+     *     in="query",
+     *     description="email of Client",
+     *     @OA\Schema(type="string")
+     * )
+     * 
+     * @OA\Tag(name="Clients")
+     * @Security(name="Bearer")
      */
     public function update(String $id, Request $request, EntityManagerInterface $manager){
         $client = $this->getDoctrine()->getRepository(Client::class)->find($id);
@@ -122,8 +243,31 @@ class ClientController extends AbstractController
     }
 
     /**
-     * @Route("/api/clients/{id}/delete", name="client_delete")
-     * @Method({"DELETE"})
+     * Delete the user match with ID params
+     * 
+     * @Route("/api/clients/{id}/delete", name="client_delete", methods="DELETE")
+     * 
+     * @OA\Response(
+     *     response=400,
+     *     description="Client not found",
+     *     @OA\JsonContent(example = "Client not found")
+     * )
+     * 
+     * @OA\Response(
+     *     response=204,
+     *     description="client has been deleting",
+     *     @OA\JsonContent(example = "client has been deleting")
+     * )
+     * 
+     * @OA\Parameter(
+     *     name="id",
+     *     in="path",
+     *     description="resource ID",
+     *     @OA\Schema(type="integer")
+     * )
+     * 
+     * @OA\Tag(name="Clients")
+     * @Security(name="Bearer")
      */
     public function delete(String $id, EntityManagerInterface $manager){
         $client = $this->getDoctrine()->getRepository(Client::class)->find($id);
