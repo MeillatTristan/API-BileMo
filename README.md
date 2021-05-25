@@ -9,7 +9,7 @@ Dans le cadre du projet 7 de la formation OpenClassrooms "Développeur d'applica
 ## Prérequis
 PHP avec composer est requis pour pouvoir installer le projet. Un utilitaire afin de générer des clés SSH est requis.
 
-##Installation
+## Installation
 ###Etape 1 :
 Cloner le projet sur votre serveur avec cette commande :
 
