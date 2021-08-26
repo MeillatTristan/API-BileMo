@@ -13,7 +13,7 @@ PHP avec composer est requis pour pouvoir installer le projet. Un utilitaire afi
 ### Etape 1 :
 Cloner le projet sur votre serveur avec cette commande :
 
-git clone https://github.com/MeillatTristan/SnowTricks.git
+git clone https://github.com/MeillatTristan/API-BileMo.git
 
 ### Etape 2 :
 Ajouter vos informations de Databases dans le fichier .env et lancer la commande ``` php bin/console doctrine:database:create ```
