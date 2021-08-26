@@ -4,6 +4,7 @@ use App\Kernel;
 use Symfony\Component\Dotenv\Dotenv;
 use Symfony\Component\ErrorHandler\Debug;
 use Symfony\Component\HttpFoundation\Request;
+use App\CacheKernel;
 
 require dirname(__DIR__).'/vendor/autoload.php';
 
@@ -16,6 +17,12 @@ if ($_SERVER['APP_DEBUG']) {
 }
 
 $kernel = new Kernel($_SERVER['APP_ENV'], (bool) $_SERVER['APP_DEBUG']);
+
+// Wrap the default Kernel with the CacheKernel one in 'prod' environment
+if ('dev' === $kernel->getEnvironment()) {
+    $kernel = new CacheKernel($kernel);
+}
+
 $request = Request::createFromGlobals();
 $response = $kernel->handle($request);
 $response->send();

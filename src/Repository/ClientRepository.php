@@ -29,7 +29,6 @@ class ClientRepository extends ServiceEntityRepository
             ->setParameter('val', $User)
             ->orderBy('c.id', 'ASC')
             ->getQuery()
-            ->getResult()
         ;
     }
 

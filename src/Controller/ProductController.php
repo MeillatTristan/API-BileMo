@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Product;
 use App\Repository\ProductRepository;
+use App\Service\CacheService;
 use App\Service\HateoasService;
 use App\Service\PaginatorService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -45,7 +46,7 @@ class ProductController extends AbstractController
 
     /**
      * List all the product
-     * @Route("/api/products/showAll/{page}", name="productsShow", methods={"GET"})
+     * @Route("/api/products/{page}", name="productsShow", methods={"GET"})
      * @OA\Response(
      *     response=200,
      *     description="List all the product",
@@ -64,7 +65,7 @@ class ProductController extends AbstractController
      * @OA\Tag(name="products")
      * @Security(name="Bearer")
      */
-    public function showAll(ProductRepository $productRepository, String $page, PaginatorService $paginator)
+    public function showAll(ProductRepository $productRepository, String $page, PaginatorService $paginator, CacheService $cacheService, Request $request)
     {
         $query = $productRepository->findPageByProduct();
 
@@ -73,13 +74,13 @@ class ProductController extends AbstractController
         $data = $this->hateoasService->serializeHypermedia($productsPaginate, 'default');
 
         $response = new JsonResponse($data, 200, ['Content-Type' => 'application/json'], true);
-        return $response;
+        return $cacheService->addToCache($request, $response);
     }
 
     /**
      * Return one product with the id
      * 
-     * @Route("/api/products/{id}/show", name="productShow", methods={"GET"})
+     * @Route("/api/products/{id}", name="productShow", methods={"GET"})
      * @Method({"GET"})
      * 
      * @OA\Response(
@@ -106,7 +107,7 @@ class ProductController extends AbstractController
      * @OA\Tag(name="products")
      * @Security(name="Bearer")
      */
-    public function showDetail(string $id){
+    public function showDetail(string $id, CacheService $cacheService, Request $request){
         if(empty($product = $this->getDoctrine()->getRepository(Product::class)->find($id))){
             return $this->json(['message' => 'Product not found'], 404, [], []);
         }
@@ -115,7 +116,7 @@ class ProductController extends AbstractController
 
         $response = new JsonResponse($data, 200, ['Content-Type' => 'application/json'], true);
 
-        return $response;
+        return $cacheService->addToCache($request, $response);
     }
 
     /**
@@ -290,7 +291,10 @@ class ProductController extends AbstractController
         if(!empty($product)){
             $manager->remove($product);
             $manager->flush();
-            return $this->json(["message" => "product has been deleting"], 204, [], []);
+            return $this->json([
+                'status' => 204,
+                'message' => "product has been deleting"
+            ],400);
         }
         else{
             return $this->json([

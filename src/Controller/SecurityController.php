@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Repository\ClientRepository;
 use App\Repository\UserRepository;
+use App\Service\CacheService;
 use App\Service\HateoasService;
 use App\Service\PaginatorService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -106,45 +107,9 @@ class SecurityController extends AbstractController
   }
 
   /**
-   * List all users
-   * 
-   * @Route("/api/users/showAll/{page}", name="usersShow", methods="GET")
-   * 
-   * @OA\Response(
-   *     response=200,
-   *     description="List all users",
-   *     @OA\JsonContent(
-   *        type="array",
-   *        @OA\Items(ref=@Model(type=User::class, groups={"UserShow"}))
-   *     )
-   * )
-   * 
-   * @OA\Parameter(
-     *     name="page",
-     *     in="path",
-     *     description="page number",
-     *     @OA\Schema(type="integer")
-     * )
-   * @OA\Tag(name="Users")
-   * @Security(name="Bearer")
-   */
-  public function showAll(UserRepository $productRepository, String $page, PaginatorService $paginator)
-  {
-    $query = $productRepository->findPageByProduct();
-
-    $usersPaginate = $paginator->paginate($query, '10', $page);
-
-    $data = $this->hateoasService->serializeHypermedia($usersPaginate, 'UserShow');
-
-    $response = new JsonResponse($data, 200, ['Content-Type' => 'application/json'], true);
-    return $response;
-
-  }
-
-  /**
    * Return user detail with ID params
    * 
-   * @Route("/api/users/{id}/show", name="userShow", methods="GET")
+   * @Route("/api/users/{id}", name="userShow", methods="GET")
    * 
    * @OA\Response(
    *     response=200,
@@ -170,24 +135,23 @@ class SecurityController extends AbstractController
    * @OA\Tag(name="Users")
    * @Security(name="Bearer")
    */
-  public function showDetail(string $id)
+  public function showDetail(string $id, CacheService $cacheService, Request $request)
   {
     if (empty($user = $this->getDoctrine()->getRepository(User::class)->find($id))) {
-      return $this->json(['message' => 'User not found'], 404, [], []);
+      $response = $this->json(['message' => 'User not found'], 404, [], []);
+      return $cacheService->addToCache($request, $response);
     }
 
     $data = $this->hateoasService->serializeHypermedia($user, 'UserShow');
 
     $response = new JsonResponse($data, 200, ['Content-Type' => 'application/json'], true);
-    return $response;
-
-    return $response;
+    return $cacheService->addToCache($request, $response);
   }
 
   /**
    * List all clients link with the user connected
    * 
-   * @Route("/api/users/showClients/{page}", name="userShowClients", methods="GET")
+   * @Route("/api/users/{page}", name="userShowClients", methods="GET")
    * 
    * @OA\Response(
    *     response=200,
@@ -200,7 +164,7 @@ class SecurityController extends AbstractController
    * @OA\Tag(name="Users")
    * @Security(name="Bearer")
    */
-  public function showClients(ClientRepository $ClientRepo, String $page, PaginatorService $paginator)
+  public function showClients(ClientRepository $ClientRepo, String $page, PaginatorService $paginator, CacheService $cacheService, Request $request)
   {
     $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
 
@@ -211,7 +175,7 @@ class SecurityController extends AbstractController
 
     $response = new JsonResponse($data, 200, ['Content-Type' => 'application/json'], true);
 
-    return $response;
+    return $cacheService->addToCache($request, $response);
   }
 
   /**

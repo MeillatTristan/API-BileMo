@@ -6,6 +6,7 @@ use App\Entity\Client;
 use App\Repository\ClientRepository;
 use App\Service\HateoasService;
 use App\Service\PaginatorService;
+use App\Service\CacheService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -103,7 +104,7 @@ class ClientController extends AbstractController
     /**
      * List all Clients
      * 
-     * @Route("/api/clients/showAll/{page}", name="clientsShow", methods="GET")
+     * @Route("/api/clients/{page}", name="clientsShow", methods="GET")
      * 
      * @OA\Response(
      *     response=200,
@@ -124,21 +125,21 @@ class ClientController extends AbstractController
      * @OA\Tag(name="Clients")
      * @Security(name="Bearer")
      */
-    public function showAll(ClientRepository $productRepository, String $page, PaginatorService $paginator)
+    public function showAll(ClientRepository $clientRepository, String $page, PaginatorService $paginator, CacheService $cacheService, Request $request)
     {
-        $query = $productRepository->findPageByProduct();
+        $query = $clientRepository->findByUser($this->getUser());
 
         $clientsPaginate = $paginator->paginate($query, '10', $page);
 
         $data = $this->hateoasService->serializeHypermedia($clientsPaginate, 'ClientShow');
 
         $response = new JsonResponse($data, 200, ['Content-Type' => 'application/json'], true);
-        return $response;
+        return $cacheService->addToCache($request, $response);
     }
 
     /**
      * Return data of a client with a ID params
-     * @Route("/api/clients/{id}/show", name="clientShow", methods="GET")
+     * @Route("/api/clients/{id}", name="clientShow", methods="GET")
      * 
      * @OA\Response(
      *     response=200,
@@ -164,17 +165,17 @@ class ClientController extends AbstractController
      * @OA\Tag(name="Clients")
      * @Security(name="Bearer")
      */
-    public function showDetail(string $id){
+    public function showDetail(string $id, CacheService $cacheService, Request $request){
         if(empty($client = $this->getDoctrine()->getRepository(Client::class)->find($id))){
-            return $this->json(['message' => 'Clients not found'], 404, [], []);
+            $response = $this->json(['message' => 'Clients not found'], 404, [], []);
+            return $cacheService->addToCache($request, $response);
         }
 
         $data = $this->hateoasService->serializeHypermedia($client, 'ClientShow');
 
         $response = new JsonResponse($data, 200, ['Content-Type' => 'application/json'], true);
-        return $response;
-
-        return $response;
+        
+        return $cacheService->addToCache($request, $response);
     }
 
     /**
