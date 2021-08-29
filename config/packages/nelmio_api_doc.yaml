@@ -2,3 +2,15 @@ nelmio_api_doc:
     areas:
         default:
             path_patterns: [ /api/ ]
+    documentation:
+        info:
+            title: Bilemo
+            version: 1.0.0
+        components:
+            securitySchemes:
+                Bearer:
+                    type: http
+                    scheme: bearer
+                    bearerFormat: JWT
+        security:
+            - Bearer: []
