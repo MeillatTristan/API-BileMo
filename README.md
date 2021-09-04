@@ -27,6 +27,8 @@ Configurer les variables d'environnement du projet dans le fichier ```.env``` (d
 ### Etape 5 :
 Installer les différentes dépendances du projet via Composer :
 
+```
 composer install
+```
 
 Le projet est maintenant fonctionnel, vous pouvez connaitre les différentes utilisations de l'API en vous rendant à l'URL /api/doc
