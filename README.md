@@ -22,6 +22,9 @@ Ajouter vos informations de Databases dans le fichier .env et lancer la commande
 Générer vos clés SSH et ajouter les dans le dossier ``` config/JWT ``` sous le nom de private.pem et public.pem
 
 ### Etape 4 :
+Configurer les variables d'environnement du projet dans le fichier ```.env``` (database et emplacement des clés SSH)
+
+### Etape 5 :
 Installer les différentes dépendances du projet via Composer :
 
 composer install
